@@ -24,3 +24,4 @@ source venv/bin/activate
 # Run as module
 python -m streamlit run streamlit_app1.py
 ```
+# PRI
