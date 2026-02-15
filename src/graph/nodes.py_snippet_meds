@@ -1,0 +1,53 @@
+
+def medication_node(state: ReportState) -> ReportState:
+    logs = state.get("logs", [])
+    logs.append("medication_node: checking for medication side effects")
+    
+    abnormal_tests = state.get("abnormal_tests", [])
+    medications = state.get("medications", [])
+    
+    if not medications or not abnormal_tests:
+        state["medication_analysis"] = "No medications provided or no abnormal tests to check."
+        logs.append("medication_node: skipping (no meds or no abnormalities)")
+        state["logs"] = logs
+        return state
+
+    # Format inputs
+    meds_str = ", ".join(medications)
+    test_list_str = "\\n".join([
+        f"- {t.get('name')} ({t.get('code')}): {t.get('value')} {t.get('unit')} (Flag: {t.get('flag')})"
+        for t in abnormal_tests
+    ])
+
+    system_prompt = """You are a Clinical Pharmacology AI.
+Your goal is to identify if any of the patient's abnormal lab results could be potential side effects of their current medications.
+- Reference standard drug-lab interactions.
+- Be cautious: use "can cause," "may contribute to," "associated with."
+- If no link is found, state "No relevant side effects identified."
+- Be concise.
+"""
+
+    user_prompt = f"""
+Current Medications: {meds_str}
+
+Abnormal Lab Results:
+{test_list_str}
+
+Analyze for potential drug-lab interactions/side effects:
+"""
+
+    try:
+        from src.llm import get_llm
+        llm = get_llm()
+        response = llm.invoke([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ])
+        state["medication_analysis"] = response.content
+        logs.append("medication_node: LLM generated analysis")
+    except Exception as e:
+        state["medication_analysis"] = "Could not analyze medications."
+        logs.append(f"medication_node: error {str(e)}")
+
+    state["logs"] = logs
+    return state

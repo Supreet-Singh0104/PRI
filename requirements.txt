@@ -1,0 +1,18 @@
+langchain
+langchain-community
+langchain-google-genai
+tavily-python
+faiss-cpu           # for FAISS index later; optional right now
+python-dotenv
+tiktoken
+mysql-connector-python
+protobuf<5.0.0dev
+langgraph
+flask
+pymupdf
+reportlab
+streamlit
+requests
+chromadb 
+sentence-transformers 
+pypdf

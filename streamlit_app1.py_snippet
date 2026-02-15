@@ -1,0 +1,10 @@
+
+def render_correlations(correlations: str):
+    """
+    Renders the cross-test correlation section.
+    """
+    if not correlations:
+        return
+    
+    st.subheader("🔗 Potential Correlations")
+    st.info(correlations)

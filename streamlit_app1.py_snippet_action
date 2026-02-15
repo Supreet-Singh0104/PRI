@@ -1,0 +1,10 @@
+
+def render_action_plan(action_plan: str):
+    """
+    Renders the actionable next steps section.
+    """
+    if not action_plan:
+        return
+    
+    st.subheader("📝 Actionable Next Steps")
+    st.markdown(action_plan)

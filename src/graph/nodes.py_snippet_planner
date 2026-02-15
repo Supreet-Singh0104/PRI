@@ -1,0 +1,56 @@
+
+def planner_node(state: ReportState) -> ReportState:
+    logs = state.get("logs", [])
+    logs.append("planner_node: generating actionable next steps")
+    
+    abnormal_tests = state.get("abnormal_tests", [])
+    correlations = state.get("correlations", "")
+    patient = state.get("patient", {})
+    
+    if not abnormal_tests:
+        state["action_plan"] = "No abnormal results found. Standard screening recommended."
+        logs.append("planner_node: no abnormal tests, default plan")
+        state["logs"] = logs
+        return state
+
+    # Format inputs
+    test_list_str = "\\n".join([
+        f"- {t.get('name')} ({t.get('code')}): {t.get('value')} {t.get('unit')} (Flag: {t.get('flag')})"
+        for t in abnormal_tests
+    ])
+
+    system_prompt = """You are a "Health Planner AI".
+Your goal is to convert medical analysis into a clear, actionable CHECKLIST for the patient.
+- Prescriptive but safe (use "Consider...", "Discuss with doctor...", "Schedule...").
+- Structure your response as a Markdown checklist.
+- Include categories: 📅 Follow-up, 🩺 Specialist Consults, 🥗 Lifestyle/Diet, 💊 Medication Review (if applicable).
+- Be specific based on the results (e.g. "Increase Vitamin D rich foods" rather than just "Eat better").
+"""
+
+    user_prompt = f"""
+Patient: {patient.get('name')} ({patient.get('sex')}, DOB: {patient.get('dob')})
+
+Abnormal Results:
+{test_list_str}
+
+Correlations Identified:
+{correlations}
+
+Create an actionable Next Steps checklist:
+"""
+
+    try:
+        from src.llm import get_llm
+        llm = get_llm()
+        response = llm.invoke([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ])
+        state["action_plan"] = response.content
+        logs.append("planner_node: LLM generated action plan")
+    except Exception as e:
+        state["action_plan"] = "Could not generate action plan."
+        logs.append(f"planner_node: error {str(e)}")
+
+    state["logs"] = logs
+    return state

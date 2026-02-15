@@ -1,0 +1,17 @@
+case_id,citation_count,critic_active,description,error_msg,latency_seconds,med_interaction_detected,missing_keywords,recall_score,report_length_chars,status,timestamp
+CASE_001_ROUTINE,1,True,Routine Checkup - Mostly Normal,,54.39,False,['Supplement'],0.6666666666666666,2396,Success,2025-12-22T04:37:36.249185
+CASE_002_CRITICAL_CARDIAC,9,True,Critical Cardiac - High Risk,,113.29,True,[],1.0,6055,Success,2025-12-22T04:39:39.549395
+CASE_003_COMPLEX_METABOLIC,8,True,Complex Metabolic - Triple Whammy,,87.71,True,[],1.0,6121,Success,2025-12-22T04:41:17.261525
+CASE_004_THYROID,14,True,Endocrine - Thyroid Storm Risk,,73.83,False,['Thyrotoxicosis'],0.75,5832,Success,2025-12-22T04:42:41.095663
+CASE_005_LIVER,10,True,Toxicology - Liver Failure,,80.69,True,"['Hepatic', 'Tylenol']",0.6,5655,Success,2025-12-22T04:44:11.787290
+CASE_006_SEPSIS,,,Infectious - Sepsis Alert,"{
+  ""error"": ""1265 (01000): Data truncated for column 'flag' at row 1""
+}
+",0.09,,,,,Error,2025-12-22T04:44:21.880424
+CASE_007_ANEMIA,9,True,Chronic - Iron Deficiency,,82.49,False,['Microcytic'],0.75,4546,Success,2025-12-22T04:45:54.380604
+CASE_008_PREGNANCY,,,Physiologic - Pregnancy,"{
+  ""error"": ""could not convert string to float: 'Positive'""
+}
+",0.08,,,,,Error,2025-12-22T04:46:04.474742
+CASE_009_HEALTHY,0,True,Negative Control - Perfectly Healthy,,11.67,False,"['Healthy', 'Within range', 'No abnormalities']",0.25,1068,Success,2025-12-22T04:46:26.158187
+CASE_010_VIT_B12,9,True,Neurology - B12 Deficiency,,77.02,True,"['Cobalamin', 'Neuropathy', 'Macrocytic']",0.4,4879,Success,2025-12-22T04:47:53.185027

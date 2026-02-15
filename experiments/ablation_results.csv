@@ -1,0 +1,3 @@
+Run Label,Critic Enabled,Latency (s),Has Critique Section,Detected Drug Risk,Output Length
+Run A (RAG Only),False,121.21,True,True,5255
+Run B (Full Agentic),True,112.18,True,True,6251

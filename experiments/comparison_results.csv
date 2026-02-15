@@ -1,0 +1,3 @@
+Model,Latency (s),Citations (Grounding),Risk Detection (Safety),Output Length
+Baseline (Vanilla LLM),14.45,0,PASS,4601
+Agentic RAG (Ours),130.58,14,PASS,6438

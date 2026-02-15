@@ -1,0 +1,38 @@
+{
+  "patient": {
+    "external_id": "P001",
+    "name": "Test Patient",
+    "sex": "F",
+    "dob": "1985-01-01"
+  },
+  "report_date": "2025-12-10",
+  "tests": [
+    {
+      "code": "HGB",
+      "name": "Hemoglobin",
+      "value": 8.1,
+      "unit": "g/dL",
+      "normal_range_low": 12.0,
+      "normal_range_high": 15.5,
+      "flag": "Low"
+    },
+    {
+      "code": "TSH",
+      "name": "Thyroid Stimulating Hormone (TSH)",
+      "value": 6.8,
+      "unit": "µIU/mL",
+      "normal_range_low": 0.4,
+      "normal_range_high": 4.0,
+      "flag": "High"
+    },
+    {
+      "code": "TC",
+      "name": "Total Cholesterol",
+      "value": 180,
+      "unit": "mg/dL",
+      "normal_range_low": 125,
+      "normal_range_high": 200,
+      "flag": "Normal"
+    }
+  ]
+}

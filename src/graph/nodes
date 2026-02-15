@@ -1,0 +1,606 @@
+# ---------- Node 5: Summarizer (LLM) ----------
+
+# def summarizer_node(state: ReportState) -> ReportState:
+#     logs = state.get("logs", [])
+#     logs.append("summarizer_node: generating patient + clinician summaries with LLM")
+
+#     patient = state["patient"]
+#     current = state["current_report"]
+#     previous = state.get("previous_report")
+#     enriched_tests = state["enriched_tests"]
+
+#     llm = get_llm()
+
+#     # Build text blocks
+#     tests_block_lines = []
+#     trend_block_lines = []
+#     knowledge_block_parts = []
+
+#     for et in enriched_tests:
+#         t = et["test"]
+#         severity = et["severity"]
+#         specialists = et.get("specialists", [])
+#         specialists_str = ", ".join(specialists) if specialists else "Not specified"
+
+#         tests_block_lines.append(
+#             f"- {t['name']}: {t['value']} {t['unit']} "
+#             f"(Normal approx. {t['normal_range_low']}–{t['normal_range_high']} {t['unit']}, "
+#             f"flag = {t['flag']}, escalation_level = {severity}, "
+#             f"recommended_specialists = {specialists_str})"
+#         )
+
+
+#         tr = et["trend"]
+#         if tr:
+#             trend_block_lines.append(
+#                 f"- {tr['name']} ({t['code']}): {tr['prev_value']} {tr['prev_unit']} "
+#                 f"on {tr['prev_date']} → {tr['last_value']} {tr['last_unit']} "
+#                 f"on {tr['last_date']} (direction: {tr['direction']})"
+#             )
+#         else:
+#             trend_block_lines.append(
+#                 f"- {t['name']} ({t['code']}): Only one value available, no trend yet."
+#             )
+
+#         specialists = et.get("specialists", [])
+#         specialists_str = ", ".join(specialists) if specialists else "Not specified"
+
+#         knowledge_block_parts.append(
+#             f"### Knowledge for {t['name']} "
+#             f"(Escalation: {severity}, Specialists: {specialists_str}):\n{et['knowledge_context']}"
+#         )
+
+
+#     tests_block = "\n".join(tests_block_lines)
+#     trend_block = "\n".join(trend_block_lines)
+#     knowledge_block = "\n\n".join(knowledge_block_parts)
+
+#     prev_date = previous["report_date"] if previous else "N/A"
+
+#     system_prompt = (
+#         "You are an AI assistant helping with medical report intelligence. "
+#         "You are NOT a doctor and must not give direct medical advice or diagnosis. "
+#         "You explain lab results and trends in general educational terms, "
+#         "based on the provided values, trends, and medical knowledge context. "
+#         "Always recommend consulting a qualified clinician."
+#     )
+
+#     user_prompt = f"""
+# Patient details:
+# - Name: {patient['name']}
+# - Sex: {patient['sex']}
+# - DOB: {patient['dob']}
+
+# Previous report date: {prev_date}
+# Current report date: {current['report_date']}
+
+# Abnormal tests in current report:
+# {tests_block}
+
+# Trend summary across reports:
+# {trend_block}
+
+# Retrieved medical knowledge (from web search):
+# {knowledge_block}
+
+# TASK:
+
+# 1) Generate a **Patient Summary** in very simple language that explains:
+#    - What each abnormal test generally measures.
+#    - What the current values mean in general terms.
+#    - How the values have changed over time (improving, worsening, or stable).
+#    - A gentle reminder that only a doctor can diagnose or treat.
+
+# 2) Generate a **Clinician Summary** that:
+#    - Describes the current abnormal values in clinical terms.
+#    - Explicitly comments on trends between the previous and current reports.
+#    - Uses the provided 'escalation_level' for each test rather than inventing its own.
+#    - Uses the provided 'recommended_specialists' list instead of inventing specialties.
+#    - Suggests typical next steps or referrals at a high level (no firm diagnosis).
+
+
+# Structure the final output as:
+
+# ### Patient Summary
+# ...
+
+# ### Clinician Summary
+# ...
+# """
+
+#     response = llm.invoke(
+#         [
+#             {"role": "system", "content": system_prompt},
+#             {"role": "user", "content": user_prompt},
+#         ]
+#     )
+
+#     final_report = response.content
+
+#     logs.append("summarizer_node: LLM response generated")
+
+#     return {
+#         "final_report": final_report,
+#         "logs": logs,
+#     }
+
+# def summarizer_node(state: ReportState) -> ReportState:
+#     logs = state.get("logs", [])
+#     logs.append("summarizer_node: generating patient + clinician summaries with LLM")
+
+#     patient = state["patient"]
+#     current = state["current_report"]
+#     previous = state.get("previous_report")
+#     enriched_tests = state["enriched_tests"]
+
+#     llm = get_llm()
+
+#     tests_block_lines = []
+#     trend_block_lines = []
+#     knowledge_block_parts = []
+
+#     for et in enriched_tests:
+#         t = et["test"]
+#         severity = et["severity"]
+#         specialists = et.get("specialists", [])
+#         specialists_str = ", ".join(specialists) if specialists else "Not specified"
+
+#         tests_block_lines.append(
+#             f"- {t['name']}: {t['value']} {t['unit']} "
+#             f"(Normal approx. {t['normal_range_low']}–{t['normal_range_high']} {t['unit']}, "
+#             f"flag = {t['flag']}, escalation_level = {severity}, "
+#             f"recommended_specialists = {specialists_str})"
+#         )
+
+#         tr = et["trend"]
+#         if tr:
+#             trend_block_lines.append(
+#                 f"- {tr['name']} ({t['code']}): {tr['prev_value']} {tr['prev_unit']} "
+#                 f"on {tr['prev_date']} → {tr['last_value']} {tr['last_unit']} "
+#                 f"on {tr['last_date']} (direction: {tr['direction']})"
+#             )
+#         else:
+#             trend_block_lines.append(
+#                 f"- {t['name']} ({t['code']}): Only one value available, no trend yet."
+#             )
+
+#         knowledge_block_parts.append(
+#             f"### Knowledge for {t['name']} "
+#             f"(Escalation: {severity}, Specialists: {specialists_str}):\n{et['knowledge_context']}"
+#         )
+
+#     tests_block = "\n".join(tests_block_lines)
+#     trend_block = "\n".join(trend_block_lines)
+#     knowledge_block = "\n\n".join(knowledge_block_parts)
+
+#     prev_date = previous["report_date"] if previous else "N/A"
+
+#     system_prompt = (
+#         "You are an AI assistant helping with medical report intelligence. "
+#         "You are NOT a doctor and must not give direct medical advice or diagnosis. "
+#         "You explain lab results and trends in general educational terms, "
+#         "based on the provided values, trends, and medical knowledge context. "
+#         "Always recommend consulting a qualified clinician."
+#     )
+
+#     user_prompt = f"""
+# Patient details:
+# - Name: {patient['name']}
+# - Sex: {patient['sex']}
+# - DOB: {patient['dob']}
+
+# Previous report date: {prev_date}
+# Current report date: {current['report_date']}
+
+# Abnormal tests in current report:
+# {tests_block}
+
+# Trend summary across reports:
+# {trend_block}
+
+# Retrieved medical knowledge (from web search):
+# {knowledge_block}
+
+# TASK:
+
+# 1) Generate a **Patient Summary** in very simple language that explains:
+#    - What each abnormal test generally measures.
+#    - What the current values mean in general terms.
+#    - How the values have changed over time (improving, worsening, or stable).
+#    - A gentle reminder that only a doctor can diagnose or treat.
+
+# 2) Generate a **Clinician Summary** that:
+#    - Describes the current abnormal values in clinical terms.
+#    - Explicitly comments on trends between the previous and current reports.
+#    - Uses the provided 'escalation_level' and 'recommended_specialists' for each test rather than inventing its own.
+#    - Suggests typical next steps or referrals at a high level (no firm diagnosis).
+
+# Structure the final output as:
+
+# ### Patient Summary
+# ...
+
+# ### Clinician Summary
+# ...
+# """
+
+#     response = llm.invoke(
+#         [
+#             {"role": "system", "content": system_prompt},
+#             {"role": "user", "content": user_prompt},
+#         ]
+#     )
+
+#     core_text = response.content
+
+#     # Build References section from sources across all tests
+#     ref_items = []
+#     seen_urls = set()
+#     idx = 1
+
+#     for et in enriched_tests:
+#         for src in et.get("sources", []):
+#             url = src.get("url")
+#             title = src.get("title", "Source")
+#             if not url or url in seen_urls:
+#                 continue
+#             seen_urls.add(url)
+#             ref_items.append(f"{idx}. {title} – {url}")
+#             idx += 1
+
+#     if ref_items:
+#         references_section = "\n\n### References\n" + "\n".join(ref_items)
+#     else:
+#         references_section = ""
+
+#     final_report = core_text + references_section
+
+#     logs.append("summarizer_node: LLM response generated with references appended")
+
+#     return {
+#         "final_report": final_report,
+
+
+  def summarizer_node(state: ReportState) -> ReportState:
+    logs = state.get("logs", [])
+    logs.append("summarizer_node: generating patient + clinician summaries with LLM (inline citations)")
+
+    patient = state["patient"]
+    current = state["current_report"]
+    previous = state.get("previous_report")
+    enriched_tests = state["enriched_tests"]
+
+    citations: List[Dict[str, Any]] = state.get("citations", []) or []
+    # Map ref_id -> citation dict
+    citations_by_id = {c.get("ref_id"): c for c in citations if c.get("ref_id") is not None}
+
+    llm = get_llm()
+
+    prev_date = previous["report_date"] if previous else "N/A"
+
+    # --------------------------
+    # Build per-test blocks
+    # --------------------------
+    test_blocks = []
+
+    for et in enriched_tests:
+        t = et["test"]
+        severity = et["severity"]
+        specialists = et.get("specialists", [])
+        specialists_str = ", ".join(specialists) if specialists else "Not specified"
+
+        # trend
+        tr = et.get("trend")
+        if tr:
+            trend_line = (
+                f"{tr['name']} ({t['code']}): {tr['prev_value']} {tr['prev_unit']} on {tr['prev_date']} "
+                f"→ {tr['last_value']} {tr['last_unit']} on {tr['last_date']} "
+                f"(direction: {tr['direction']})"
+            )
+        else:
+            trend_line = f"{t['name']} ({t['code']}): Only one value available, no trend yet."
+
+        # Allowed refs for THIS test only
+        ref_ids = et.get("ref_ids", []) or []
+        allowed_refs = [citations_by_id[rid] for rid in ref_ids if rid in citations_by_id]
+
+        # Build a compact references context for the LLM to cite from
+        # (We keep snippets short to avoid token explosion)
+        refs_block_lines = []
+        for r in allowed_refs:
+            rid = r.get("ref_id")
+            title = r.get("title", "Source")
+            url = r.get("url", "")
+            snippet = (r.get("snippet") or "").strip()
+            snippet = snippet[:350]
+            refs_block_lines.append(
+                f"[Ref {rid}] {title}\nURL: {url}\nSnippet: {snippet}\n"
+            )
+        refs_block = "\n".join(refs_block_lines) if refs_block_lines else "No references provided for this test."
+
+        test_blocks.append(
+            f"""
+TEST:
+- code: {t.get('code')}
+- name: {t.get('name')}
+- value: {t.get('value')} {t.get('unit')}
+- normal_range: {t.get('normal_range_low')}–{t.get('normal_range_high')} {t.get('unit')}
+- flag: {t.get('flag')}
+- escalation_level: {severity}
+- recommended_specialists: {specialists_str}
+
+TREND:
+- {trend_line}
+
+ALLOWED REFERENCES (you may cite ONLY these using inline [Ref N]):
+{refs_block}
+""".strip()
+        )
+
+    combined_tests_block = "\n\n".join(test_blocks)
+
+    # --------------------------
+    # Prompts (strict citations)
+    # --------------------------
+    system_prompt = """
+You are a medical education assistant for report understanding.
+You are NOT a doctor.
+
+Safety rules:
+- Be purely educational and non-prescriptive.
+- Do NOT diagnose or prescribe treatment/medication.
+- Avoid direct instructions like "you should take/start/stop".
+- Encourage consultation with a qualified clinician.
+
+STRICT CITATION RULES:
+- Use inline citations in the format: [Ref N]
+- You may ONLY cite reference IDs that appear under "ALLOWED REFERENCES" for that test.
+- Do NOT invent references.
+- If a sentence includes a factual medical claim and an allowed reference exists, add at least one [Ref N].
+- If no allowed references exist for a claim, leave it uncited (do not fabricate).
+""".strip()
+
+    user_prompt = f"""
+Patient details:
+- Name: {patient.get('name')}
+- Sex: {patient.get('sex')}
+- DOB: {patient.get('dob')}
+
+Previous report date: {prev_date}
+Current report date: {current.get('report_date')}
+
+TASK:
+Write the final report with EXACTLY this structure:
+
+### Patient Summary
+- Simple language
+- Explain each abnormal test (what it measures + what the value might indicate generally)
+- Mention trend direction (improving/worsening/stable)
+- Include inline citations [Ref N] for factual claims when allowed refs exist
+- End with a reminder that only a clinician can interpret in context
+
+### Clinician Summary
+For each abnormal test:
+- Interpretation (educational, not diagnostic)
+- Trend note
+- Escalation level (use provided)
+- Recommended specialists (use provided)
+- Include inline citations [Ref N] for factual claims when allowed refs exist
+
+IMPORTANT:
+- Only cite references listed in each test’s ALLOWED REFERENCES block.
+- Do not list a References section (it will be appended by another node).
+
+DATA:
+{combined_tests_block}
+""".strip()
+
+    response = llm.invoke(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+    )
+
+    state["final_report"] = response.content
+    logs.append("summarizer_node: LLM response generated (inline citations)")
+    state["logs"] = logs
+    return state
+
+
+
+
+
+
+def summarizer_node(state: ReportState) -> ReportState:
+    logs = state.get("logs", [])
+    logs.append("summarizer_node: generating patient + clinician summaries with LLM (inline citations + clinical_trend)")
+
+    patient = state["patient"]
+    current = state["current_report"]
+    previous = state.get("previous_report")
+    enriched_tests = state.get("enriched_tests", []) or []
+
+    # NEW: analysis rows contain clinical_trend + direction + prev/last metadata
+    analysis_rows: List[Dict[str, Any]] = state.get("analysis", []) or []
+    analysis_by_code = {
+        (r.get("code") or "").upper(): r
+        for r in analysis_rows
+        if r.get("code")
+    }
+
+    citations: List[Dict[str, Any]] = state.get("citations", []) or []
+    citations_by_id = {c.get("ref_id"): c for c in citations if c.get("ref_id") is not None}
+
+    llm = get_llm()
+
+    prev_date = previous["report_date"] if previous else "N/A"
+    curr_date = current.get("report_date", "N/A")
+
+    # --------------------------
+    # Build per-test blocks (with clinical_trend)
+    # --------------------------
+    test_blocks: List[str] = []
+
+    for et in enriched_tests:
+        t = et.get("test", {}) or {}
+        severity = et.get("severity", "Unknown")
+        specialists = et.get("specialists", []) or []
+        specialists_str = ", ".join(specialists) if specialists else "Not specified"
+
+        code = (t.get("code") or "").upper()
+
+        # --- Trend source of truth: analysis node ---
+        a = analysis_by_code.get(code, {}) or {}
+
+        # direction = up/down/stable, clinical_trend = Improving/Worsening/Stable
+        trend_direction = a.get("direction", "Unknown")
+        clinical_trend = a.get("clinical_trend", "Unknown")
+
+        # Previous/current values and dates (prefer analysis if available)
+        prev_value = a.get("previous_value", None)
+        prev_unit = a.get("previous_unit", t.get("unit"))
+        prev_date_for_test = a.get("previous_date", prev_date)
+
+        last_value = a.get("current_value", t.get("value"))
+        last_unit = a.get("current_unit", t.get("unit"))
+        last_date_for_test = a.get("current_date", curr_date)
+
+        # Series last 5 (optional) – just pass as compact text, not mandatory
+        series_last_5 = a.get("series_last_5", []) or []
+        series_line = ""
+        if series_last_5:
+            # keep it short
+            series_compact = []
+            for p in series_last_5[-5:]:
+                d = p.get("date")
+                v = p.get("value")
+                u = p.get("unit") or t.get("unit")
+                if d is not None and v is not None:
+                    series_compact.append(f"{d}:{v}{u}")
+            if series_compact:
+                series_line = " | last_5=" + ", ".join(series_compact)
+
+        # If we don't have a previous value, state it clearly
+        if prev_value is None:
+            trend_line = (
+                f"{t.get('name')} ({code}): only one value available. "
+                f"trend_direction=Unknown; clinical_trend=Unknown{series_line}"
+            )
+        else:
+            trend_line = (
+                f"{t.get('name')} ({code}): prev={prev_value} {prev_unit} on {prev_date_for_test} "
+                f"→ current={last_value} {last_unit} on {last_date_for_test} | "
+                f"trend_direction={trend_direction} | clinical_trend={clinical_trend}{series_line}"
+            )
+
+        # Allowed refs for THIS test only
+        ref_ids = et.get("ref_ids", []) or []
+        allowed_refs = [citations_by_id[rid] for rid in ref_ids if rid in citations_by_id]
+
+        refs_block_lines: List[str] = []
+        for r in allowed_refs:
+            rid = r.get("ref_id")
+            title = r.get("title", "Source")
+            url = r.get("url", "")
+            snippet = (r.get("snippet") or "").strip()
+            snippet = snippet[:350]
+            refs_block_lines.append(
+                f"[Ref {rid}] {title}\nURL: {url}\nSnippet: {snippet}\n"
+            )
+        refs_block = "\n".join(refs_block_lines) if refs_block_lines else "No references provided for this test."
+
+        test_blocks.append(
+            f"""
+TEST:
+- code: {t.get('code')}
+- name: {t.get('name')}
+- value: {t.get('value')} {t.get('unit')}
+- normal_range: {t.get('normal_range_low')}–{t.get('normal_range_high')} {t.get('unit')}
+- flag: {t.get('flag')}
+- escalation_level: {severity}
+- recommended_specialists: {specialists_str}
+
+TREND (source-of-truth provided by system):
+- {trend_line}
+
+ALLOWED REFERENCES (you may cite ONLY these using inline [Ref N]):
+{refs_block}
+""".strip()
+        )
+
+    combined_tests_block = "\n\n".join(test_blocks)
+
+    # --------------------------
+    # Prompts (strict citations + clinical_trend rule)
+    # --------------------------
+    system_prompt = """
+You are a medical education assistant for report understanding.
+You are NOT a doctor.
+
+Safety rules:
+- Be purely educational and non-prescriptive.
+- Do NOT diagnose or prescribe treatment/medication.
+- Avoid direct instructions like "you should take/start/stop".
+- Encourage consultation with a qualified clinician.
+
+STRICT CITATION RULES:
+- Use inline citations in the format: [Ref N]
+- You may ONLY cite reference IDs that appear under "ALLOWED REFERENCES" for that test.
+- Do NOT invent references.
+- If a sentence includes a factual medical claim and an allowed reference exists, add at least one [Ref N].
+- If no allowed references exist for a claim, leave it uncited (do not fabricate).
+
+STRICT TREND RULES:
+- Use clinical_trend EXACTLY as provided in the TREND block (Improving/Worsening/Stable/Unknown).
+- Do NOT infer improvement/worsening by comparing numbers yourself.
+- If clinical_trend is Unknown, say "trend unclear" (do not guess).
+""".strip()
+
+    user_prompt = f"""
+Patient details:
+- Name: {patient.get('name')}
+- Sex: {patient.get('sex')}
+- DOB: {patient.get('dob')}
+
+Previous report date: {prev_date}
+Current report date: {curr_date}
+
+TASK:
+Write the final report with EXACTLY this structure:
+
+### Patient Summary
+- Simple language
+- Explain each abnormal test (what it measures + what the value might indicate generally)
+- For trends: use the provided clinical_trend wording (Improving/Worsening/Stable or "trend unclear")
+- Include inline citations [Ref N] for factual claims when allowed refs exist
+- End with a reminder that only a clinician can interpret in context
+
+### Clinician Summary
+For each abnormal test:
+- Interpretation (educational, not diagnostic)
+- Trend note: MUST use provided clinical_trend wording, not numeric inference
+- Escalation level (use provided)
+- Recommended specialists (use provided)
+- Include inline citations [Ref N] for factual claims when allowed refs exist
+
+IMPORTANT:
+- Only cite references listed in each test’s ALLOWED REFERENCES block.
+- Do not list a References section (it will be appended by another node).
+- Trend wording MUST be driven by clinical_trend only.
+
+DATA:
+{combined_tests_block}
+""".strip()
+
+    response = llm.invoke(
+        [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+    )
+
+    state["final_report"] = response.content
+    logs.append("summarizer_node: LLM response generated (inline citations + clinical_trend)")
+    state["logs"] = logs
+    return state

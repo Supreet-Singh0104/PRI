@@ -1,0 +1,82 @@
+
+def dietary_node(state: ReportState) -> ReportState:
+    """
+    Generates a personalized 3-Day Meal Plan based on abnormal results and history.
+    """
+    logs = state.get("logs", [])
+    logs.append("dietary_node: generating meal plan")
+    
+    analysis = state.get("analysis", []) or []
+    # Identify key abnormals to focus diet on
+    abnormal_summaries = []
+    for row in analysis:
+        name = row.get("name")
+        val = row.get("current_value")
+        flag = row.get("current_flag")
+        if flag and flag != "Normal":
+            abnormal_summaries.append(f"{name}: {val} ({flag})")
+            
+    abnormal_text = "\n".join(abnormal_summaries) if abnormal_summaries else "None"
+    
+    medications = state.get("medications", [])
+    history = state.get("medical_history", "")
+    
+    meds_text = ", ".join(medications) if medications else "None"
+    history_text = history if history else "None"
+
+    # If no abnormals/meds/history, just give generic healthy advice
+    if abnormal_text == "None" and meds_text == "None" and history_text == "None":
+        state["dietary_plan"] = "No specific abnormal findings or context provided. A general balanced diet is recommended."
+        state["logs"] = logs
+        return state
+
+    prompt = f"""
+You are a Clinical Nutritionist AI.
+Your task is to create a specific, practical **3-Day Anti-Inflammatory Meal Plan** tailored to this patient's health profile.
+
+Patient Profile:
+- Abnormal Tests:
+{abnormal_text}
+
+- Medical History:
+{history_text}
+
+- Current Medications:
+{meds_text}
+
+GOAL:
+- Create a 3-Day Plan (Day 1, Day 2, Day 3).
+- For each day: Breakfast, Lunch, Dinner, Snack.
+- FOODS MUST HELP IMPROVE the specific abnormal results (e.g., Low sugar for High Glucose, Low sodium for Hypertension).
+- Avoid food-drug interactions if medications are listed (e.g., no grapefruit with Statins - check silently, do not list the interaction, just avoid the food).
+
+FORMAT:
+## 🥗 personalized 3-Day Meal Plan
+
+### Day 1
+- **Breakfast**: ...
+- **Lunch**: ...
+- **Dinner**: ...
+- **Snack**: ...
+
+### Day 2
+...
+
+### Day 3
+...
+
+### 🛒 Shopping List
+- [ ] Item 1
+- [ ] Item 2
+...
+
+### Clinical Rationale
+- Brief explanation of why these foods were chosen (e.g. "Oats chosen to lower LDL cholesterol").
+"""
+
+    llm = get_llm()
+    response = llm.invoke(prompt)
+    
+    state["dietary_plan"] = response.content
+    state["logs"] = logs
+    return state

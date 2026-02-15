@@ -1,0 +1,10 @@
+
+def render_medication_analysis(medication_analysis: str):
+    """
+    Renders the medication insights section.
+    """
+    if not medication_analysis:
+        return
+    
+    st.subheader("💊 Medication & Risk Insights")
+    st.info(medication_analysis)

@@ -1,0 +1,48 @@
+
+def correlation_node(state: ReportState) -> ReportState:
+    logs = state.get("logs", [])
+    logs.append("correlation_node: checking for cross-test correlations")
+    
+    abnormal_tests = state.get("abnormal_tests", [])
+    if len(abnormal_tests) < 2:
+        state["correlations"] = "Not enough abnormal tests to determine correlations."
+        logs.append("correlation_node: <2 abnormal tests, skipping")
+        state["logs"] = logs
+        return state
+
+    # Format prompt
+    test_list_str = "\\n".join([
+        f"- {t.get('name')} ({t.get('code')}): {t.get('value')} {t.get('unit')} (Flag: {t.get('flag')})"
+        for t in abnormal_tests
+    ])
+    
+    system_prompt = """You are a medical analysis AI. 
+Your goal is to identify potential physiological or metabolic links between the provided abnormal lab results.
+- Focus on common complications (e.g. Iron Deficiency, Metabolic Syndrome, Kidney function).
+- Be concise.
+- If no clear link exists, say "No obvious correlation found."
+- Do NOT diagnose. Use phrases like "This pattern is often seen in..." or "High X and Low Y can suggest..."
+"""
+
+    user_prompt = f"""
+Patient Sex: {state['patient'].get('sex')}
+Abnormal Results:
+{test_list_str}
+
+Identify potential correlations:
+"""
+
+    try:
+        llm = get_llm()
+        response = llm.invoke([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ])
+        state["correlations"] = response.content
+        logs.append("correlation_node: LLM generated correlations")
+    except Exception as e:
+        state["correlations"] = "Could not determine correlations."
+        logs.append(f"correlation_node: error {str(e)}")
+
+    state["logs"] = logs
+    return state
