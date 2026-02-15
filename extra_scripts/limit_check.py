@@ -1,7 +1,7 @@
 import requests
 import json
 
-API_KEY = "AIzaSyBXl4Z_C2wBZSFeSZI2C2e8AO2S0Jc1aQs"
+API_KEY = ""
 BASE_URL = "https://generativelanguage.googleapis.com"
 
 
